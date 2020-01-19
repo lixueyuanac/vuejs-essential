@@ -4,6 +4,7 @@ import ls from '../utils/localStorage'
 import router from '../router'
 // 引入 actions.js 的所有导出
 import * as moreActions from './actions'
+import * as moreGetters from './getters'
 Vue.use(Vuex)
 
 const state = {
@@ -11,8 +12,14 @@ const state = {
   user: ls.getItem('user'),
   // 添加 auth 来保存当前用户的登录状态
   auth: ls.getItem('auth'),
+  // token
+  token:ls.getItem('token'),
   // 所有文章状态
-  articles: ls.getItem('articles')
+  articles: ls.getItem('articles'),
+   // 搜索值
+  searchValue: '',
+  // 默认为 location.origin
+  origin: location.origin
 }
 
 const mutations = {
@@ -25,12 +32,19 @@ const mutations = {
   // 添加 UPDATE_AUTH 来更改当前用户的登录状态
   UPDATE_AUTH(state, auth) {
     state.auth = auth
+    if (!auth) {
+      ls.setItem('token', '')
+    }
     ls.setItem('auth', auth)
   },
   // 更改所有文章的事件类型
   UPDATE_ARTICLES(state, articles) {
     state.articles = articles
     ls.setItem('articles', articles)
+  },
+  // 更新搜索值的事件类型
+  UPDATE_SEARCH_VALUE(state, searchValue) {
+    state.searchValue = searchValue
   }
 }
 
@@ -55,7 +69,7 @@ const actions = {
       user = { ...stateUser, ...user }
     }
 
-    commit('UPDATE_USER', user)
+    commit('UPDATE_USER', user, token)
   },
   // 使用对象展开运算符混入 moreActions
   ...moreActions
@@ -76,7 +90,9 @@ const getters = {
     } else {
       return null
     }
-  }
+  },
+  // 混入 moreGetters, 你可以理解为 getters = Object.assign(getters, moreGetters)
+  ...moreGetters
 }
 
 const store = new Vuex.Store({

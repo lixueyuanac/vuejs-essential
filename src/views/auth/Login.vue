@@ -1,7 +1,7 @@
 <template>
   <div class="row">
     <div class="col-md-4 col-md-offset-4 floating-box">
-      <Message :show.sync="msgShow" :type="msgType" :msg="msg"/>
+
 
       <div class="panel panel-default">
         <div class="panel-heading">
@@ -18,9 +18,11 @@
             <input v-model.trim="password" id="password" v-validator.required="{ title: '密码' }" type="password" class="form-control" placeholder="请填写密码">
           </div>
           <br>
-          <button @click="login" type="submit" class="btn btn-lg btn-success btn-block">
-            <i class="fa fa-btn fa-sign-in"></i> 登录
-          </button>
+          <div class="form-group" @click="login">
+            <button  type="submit" class="btn btn-lg btn-success btn-block">
+              <i class="fa fa-btn fa-sign-in"></i> 登录
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -28,15 +30,14 @@
 </template>
 
 <script>
+import {login} from '@/api/api'
+import ls from '@/utils/localStorage'
 export default {
   name: 'Login',
   data() {
     return {
       username: '', // 用户名
       password: '', // 密码
-      msg: '', // 消息
-      msgType: '', // 消息类型
-      msgShow: false // 是否显示消息，默认不显示
     }
   },
   methods: {
@@ -49,36 +50,28 @@ export default {
         }
       })
     },
-    submit() {
+    async submit() {
       // 表单里的用户信息
       const user = {
-        name: this.username,
+        username: this.username,
         password: this.password
       }
       // 仓库的用户信息
       const localUser = this.$store.state.user
-
-      if (localUser) {
-        // 检查用户名和密码是否匹配
-        if (localUser.name !== user.name || localUser.password !== user.password) {
-          this.showMsg('用户名或密码不正确')
-        } else {
-          // 匹配时，分发 login 事件进行登录
-          this.$store.dispatch('login')
-        }
+      // 调取登陆接口
+      const result = await login(user)
+      console.log(result)
+      // 检查用户名和密码是否匹配
+      if (result.code != 200 || result.data.token === undefined) {
+        this.$message.show('用户名或密码不正确')
       } else {
-        this.showMsg('不存在该用户')
+        // 匹配时，分发 login 事件进行登录
+        ls.setItem('user', user)
+        ls.setItem('auth', true)
+        ls.setItem('token', result.data.token)
+        this.$store.dispatch('login')
       }
     },
-    showMsg(msg, type = 'warning') {
-      this.msg = msg
-      this.msgType = type
-      this.msgShow = false
-
-      this.$nextTick(() => {
-        this.msgShow = true
-      })
-    }
   }
 }
 </script>
